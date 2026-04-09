@@ -18,7 +18,6 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState(SCREENS.TITLE);
   const [leadData, setLeadData] = useState(null);
   const [finalGameState, setFinalGameState] = useState(null);
-  
   const gameEngine = useGameEngine();
 
   const handlePlayClick = () => {
@@ -46,32 +45,21 @@ function App() {
   };
 
   return (
-    <div className="w-full h-full bg-game-navy overflow-hidden relative">
+    <div className="app-viewport bg-slate-900">
       {currentScreen === SCREENS.TITLE && (
         <TitleScreen onPlay={handlePlayClick} />
       )}
-      
       {currentScreen === SCREENS.LEAD && (
-        <LeadCaptureScreen 
-          onSubmit={handleLeadSubmit} 
-          onBack={() => setCurrentScreen(SCREENS.TITLE)} 
-        />
+        <LeadCaptureScreen onSubmit={handleLeadSubmit} onBack={() => setCurrentScreen(SCREENS.TITLE)} />
       )}
-      
       {currentScreen === SCREENS.HOWTO && (
         <HowToPlayScreen onStart={handleStartGame} />
       )}
-      
       {currentScreen === SCREENS.GAME && (
         <GameScreen engine={gameEngine} onGameOver={handleGameOver} />
       )}
-      
       {currentScreen === SCREENS.END && (
-        <EndScreen 
-          gameState={finalGameState} 
-          leadData={leadData} 
-          onRestart={handleRestart} 
-        />
+        <EndScreen gameState={finalGameState} leadData={leadData} onRestart={handleRestart} />
       )}
     </div>
   );

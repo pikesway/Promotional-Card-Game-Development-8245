@@ -4,16 +4,29 @@
 
 @layer utilities {
   .bg-game-pattern {
-    background-color: #2d8a4e;
+    background-color: #0f172a;
     background-image: 
-      linear-gradient(135deg, rgba(255,255,255,0.05) 25%, transparent 25%),
-      linear-gradient(225deg, rgba(255,255,255,0.1) 25%, transparent 25%),
-      linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%),
-      linear-gradient(315deg, rgba(255,255,255,0.1) 25%, #2d8a4e 25%);
-    background-position:  20px 0, 20px 0, 0 0, 0 0;
-    background-size: 40px 40px;
-    background-repeat: repeat;
+      radial-gradient(circle at 50% 40%, rgba(30, 41, 59, 0.7) 0%, rgba(2, 6, 23, 0.9) 100%),
+      linear-gradient(135deg, rgba(255,255,255,0.02) 25%, transparent 25%),
+      linear-gradient(225deg, rgba(255,255,255,0.02) 25%, transparent 25%);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
   }
+
+  .bg-game-table {
+    background: radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%);
+  }
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important; /* Force kill scrolling */
+  overscroll-behavior: none; /* Kill rubber-banding */
+  touch-action: none; /* Prevent browser handling of gestures */
+  background-color: #0f172a;
+  position: fixed;
+  font-family: 'Nunito', sans-serif;
+  color: white;
 }
 
 * {
@@ -22,25 +35,16 @@
   box-sizing: border-box;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
 }
 
-html, body, #root {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: fixed;
-  font-family: 'Nunito', sans-serif;
-  background-color: #1e293b; /* game-navy fallback */
-}
-
-/* The "App Shell" Viewport */
 .app-viewport {
   width: 100%;
   height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden !important;
   position: relative;
+  touch-action: none; /* Critical for drag-and-drop */
+  padding-bottom: env(safe-area-inset-bottom);
 }

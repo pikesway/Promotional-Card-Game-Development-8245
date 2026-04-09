@@ -23,9 +23,8 @@ export const createInitialState = () => ({
     discards: [[], [], [], []]
   },
   buildPiles: [[], [], [], []],
-  turn: 'player', // 'player' | 'ai'
+  turn: 'player',
   phase: PHASES.DRAW,
-  selectedCard: null, // { source: 'hand|stock|discard', index: num, card: obj }
   message: "Your turn! Tap the Draw Pile to start.",
   gameOver: false,
   winner: null,
@@ -42,17 +41,19 @@ export const createInitialState = () => ({
 const generateDeck = () => {
   let cards = [];
   let id = 1;
+  
   // 12 sets of 1-12
   for (let s = 0; s < 12; s++) {
     for (let v = 1; v <= 12; v++) {
       cards.push({ id: id++, type: 'number', value: v });
     }
   }
+  
   // 18 wilds
   for (let w = 0; w < 18; w++) {
     cards.push({ id: id++, type: 'wild', value: null });
   }
-  // Shuffle
+  
   return cards.sort(() => Math.random() - 0.5);
 };
 
@@ -67,11 +68,25 @@ const gameReducer = (state, action) => {
       return {
         ...createInitialState(),
         deck,
-        player: { ...state.player, stock: playerStock, hand: [], discards: [[], [], [], []], score: 0 },
-        ai: { ...state.ai, stock: aiStock, hand: [], discards: [[], [], [], []] },
+        player: {
+          ...state.player,
+          stock: playerStock,
+          hand: [],
+          discards: [[], [], [], []],
+          score: 0
+        },
+        ai: {
+          ...state.ai,
+          stock: aiStock,
+          hand: [],
+          discards: [[], [], [], []]
+        },
         phase: PHASES.DRAW,
         message: "Your turn! Tap the Draw Pile to start.",
-        stats: { ...createInitialState().stats, startTime: Date.now() }
+        stats: {
+          ...createInitialState().stats,
+          startTime: Date.now()
+        }
       };
     }
 
@@ -90,24 +105,13 @@ const gameReducer = (state, action) => {
         deck: newDeck,
         player: { ...state.player, hand: newHand },
         phase: PHASES.PLAY,
-        message: "Play cards to the center, or discard to end turn."
+        message: "Drag cards to the center or discard to end turn."
       };
     }
 
-    case 'SELECT_CARD': {
-      if (state.turn !== 'player' || state.phase === PHASES.DRAW) return state;
-      // If clicking already selected, deselect
-      if (state.selectedCard && state.selectedCard.id === action.payload.card.id) {
-        return { ...state, selectedCard: null };
-      }
-      return { ...state, selectedCard: action.payload };
-    }
-
     case 'PLAY_TO_BUILD': {
-      const { pileIndex } = action.payload;
-      if (!state.selectedCard) return state;
+      const { pileIndex, card, source, sourceIndex } = action.payload;
       
-      const card = state.selectedCard.card;
       const pile = state.buildPiles[pileIndex];
       const topValue = pile.length > 0 ? pile[pile.length - 1].value : 0;
       
@@ -121,37 +125,38 @@ const gameReducer = (state, action) => {
       } else if (card.value === topValue + 1) {
         isValid = true;
       }
-
+      
       if (!isValid) {
-        return { ...state, message: "Invalid move!", selectedCard: null };
+        return {
+          ...state,
+          message: "Invalid move!"
+        };
       }
-
+      
       // Execute Move
       let newPlayer = { ...state.player };
-      const source = state.selectedCard.source;
-      const sourceIndex = state.selectedCard.index;
-
+      
       if (source === 'hand') newPlayer.hand.splice(sourceIndex, 1);
       if (source === 'stock') newPlayer.stock.pop();
       if (source === 'discard') newPlayer.discards[sourceIndex].pop();
-
+      
       newPlayer.score += GAME_CONFIG.SCORE_VALUES.PLAY_CARD;
-
+      
       let newBuildPiles = [...state.buildPiles];
       let newPile = [...pile, { ...card, value: effectiveValue }];
       let newDeck = [...state.deck];
       let pilesCleared = state.stats.pilesCleared;
-
+      
       // Clear pile if it reaches 12
       if (newPile.length === 12 || effectiveValue === 12) {
-        newDeck = [...newPile, ...newDeck].sort(() => Math.random() - 0.5); // shuffle back
+        newDeck = [...newPile, ...newDeck].sort(() => Math.random() - 0.5);
         newPile = [];
         newPlayer.score += GAME_CONFIG.SCORE_VALUES.CLEAR_PILE;
         pilesCleared++;
       }
       
       newBuildPiles[pileIndex] = newPile;
-
+      
       // Check Win
       if (newPlayer.stock.length === 0) {
         newPlayer.score += GAME_CONFIG.SCORE_VALUES.WIN;
@@ -160,67 +165,85 @@ const gameReducer = (state, action) => {
           player: newPlayer,
           buildPiles: newBuildPiles,
           deck: newDeck,
-          selectedCard: null,
           gameOver: true,
           winner: 'player',
           message: "You won!",
-          stats: { ...state.stats, duration: Math.floor((Date.now() - state.stats.startTime)/1000), pilesCleared }
+          stats: {
+            ...state.stats,
+            duration: Math.floor((Date.now() - state.stats.startTime) / 1000),
+            pilesCleared
+          }
         };
       }
-
+      
       // If hand is empty, draw 5 immediately
       if (newPlayer.hand.length === 0 && source !== 'discard') {
-         while (newPlayer.hand.length < GAME_CONFIG.HAND_SIZE && newDeck.length > 0) {
-            newPlayer.hand.push(newDeck.pop());
-         }
-         return {
-            ...state,
-            player: newPlayer,
-            buildPiles: newBuildPiles,
-            deck: newDeck,
-            selectedCard: null,
-            message: "Hand empty! Drew 5 new cards.",
-            stats: { ...state.stats, cardsPlayed: state.stats.cardsPlayed + 1, pilesCleared }
-         };
+        while (newPlayer.hand.length < GAME_CONFIG.HAND_SIZE && newDeck.length > 0) {
+          newPlayer.hand.push(newDeck.pop());
+        }
+        
+        return {
+          ...state,
+          player: newPlayer,
+          buildPiles: newBuildPiles,
+          deck: newDeck,
+          message: "Hand empty! Drew 5 new cards.",
+          stats: {
+            ...state.stats,
+            cardsPlayed: state.stats.cardsPlayed + 1,
+            pilesCleared
+          }
+        };
       }
-
+      
       return {
         ...state,
         player: newPlayer,
         buildPiles: newBuildPiles,
         deck: newDeck,
-        selectedCard: null,
         message: "Good play!",
-        stats: { ...state.stats, cardsPlayed: state.stats.cardsPlayed + 1, pilesCleared }
+        stats: {
+          ...state.stats,
+          cardsPlayed: state.stats.cardsPlayed + 1,
+          pilesCleared
+        }
       };
     }
 
     case 'DISCARD': {
-      const { pileIndex } = action.payload;
-      if (!state.selectedCard || state.selectedCard.source !== 'hand') {
-        return { ...state, message: "You must discard from your hand.", selectedCard: null };
-      }
-
-      let newPlayer = { ...state.player };
-      const card = state.selectedCard.card;
+      const { pileIndex, sourceIndex } = action.payload;
       
-      newPlayer.hand.splice(state.selectedCard.index, 1);
+      let newPlayer = { ...state.player };
+      const card = newPlayer.hand[sourceIndex];
+      
+      if (!card) {
+        return {
+          ...state,
+          message: "Invalid discard."
+        };
+      }
+      
+      newPlayer.hand.splice(sourceIndex, 1);
       newPlayer.discards[pileIndex].push(card);
-
+      
       return {
         ...state,
         player: newPlayer,
-        selectedCard: null,
         turn: 'ai',
         phase: PHASES.DRAW,
         message: "AI Turn...",
-        stats: { ...state.stats, turnsTaken: state.stats.turnsTaken + 1 }
+        stats: {
+          ...state.stats,
+          turnsTaken: state.stats.turnsTaken + 1
+        }
       };
     }
 
     case 'AI_ACTION': {
-      // Direct state update from AI hook logic
-      return { ...state, ...action.payload };
+      return {
+        ...state,
+        ...action.payload
+      };
     }
 
     default:
@@ -231,9 +254,8 @@ const gameReducer = (state, action) => {
 export const useGameEngine = () => {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
 
-  // Helper for AI checking valid moves
   const getValidMove = useCallback((card, buildPiles) => {
-    if(!card) return -1;
+    if (!card) return -1;
     for (let i = 0; i < buildPiles.length; i++) {
       const pile = buildPiles[i];
       const topVal = pile.length > 0 ? pile[pile.length - 1].value : 0;
@@ -244,17 +266,14 @@ export const useGameEngine = () => {
     return -1;
   }, []);
 
-  // AI Logic Engine
   useEffect(() => {
     if (state.turn !== 'ai' || state.gameOver) return;
 
     let timeout;
-    
     const executeAiTurn = () => {
       let aiState = { ...state.ai };
       let newBuildPiles = [...state.buildPiles];
       let newDeck = [...state.deck];
-      let actionTaken = false;
 
       // 1. Draw cards
       if (aiState.hand.length < GAME_CONFIG.HAND_SIZE) {
@@ -263,7 +282,6 @@ export const useGameEngine = () => {
         }
       }
 
-      // Recursive play logic helper
       const tryPlay = () => {
         // Priority 1: Stock
         const stockTop = aiState.stock[aiState.stock.length - 1];
@@ -296,7 +314,9 @@ export const useGameEngine = () => {
       };
 
       const applyMove = (card, pileIndex, source, sourceIndex) => {
-        const topVal = newBuildPiles[pileIndex].length > 0 ? newBuildPiles[pileIndex][newBuildPiles[pileIndex].length - 1].value : 0;
+        const topVal = newBuildPiles[pileIndex].length > 0 
+          ? newBuildPiles[pileIndex][newBuildPiles[pileIndex].length - 1].value 
+          : 0;
         const effectiveVal = card.type === 'wild' ? topVal + 1 : card.value;
 
         if (source === 'stock') aiState.stock.pop();
@@ -304,33 +324,38 @@ export const useGameEngine = () => {
         if (source === 'discard') aiState.discards[sourceIndex].pop();
 
         let newPile = [...newBuildPiles[pileIndex], { ...card, value: effectiveVal }];
-        
+
         if (newPile.length === 12 || effectiveVal === 12) {
           newDeck = [...newPile, ...newDeck].sort(() => Math.random() - 0.5);
           newPile = [];
         }
+
         newBuildPiles[pileIndex] = newPile;
-        actionTaken = true;
       };
 
-      // Play as much as possible
       let movesThisTurn = 0;
-      while (tryPlay() && movesThisTurn < 10) { // arbitrary cap to prevent infinite loop in edge cases
+      while (tryPlay() && movesThisTurn < 10) {
         movesThisTurn++;
-        // Check win
+
         if (aiState.stock.length === 0) {
           dispatch({
             type: 'AI_ACTION',
             payload: {
-              ai: aiState, buildPiles: newBuildPiles, deck: newDeck, 
-              gameOver: true, winner: 'ai', message: "AI Wins!",
-              stats: { ...state.stats, duration: Math.floor((Date.now() - state.stats.startTime)/1000) }
+              ai: aiState,
+              buildPiles: newBuildPiles,
+              deck: newDeck,
+              gameOver: true,
+              winner: 'ai',
+              message: "AI Wins!",
+              stats: {
+                ...state.stats,
+                duration: Math.floor((Date.now() - state.stats.startTime) / 1000)
+              }
             }
           });
           return;
         }
-        
-        // Refill hand if empty
+
         if (aiState.hand.length === 0) {
           while (aiState.hand.length < GAME_CONFIG.HAND_SIZE && newDeck.length > 0) {
             aiState.hand.push(newDeck.pop());
@@ -340,7 +365,6 @@ export const useGameEngine = () => {
 
       // End Turn: Discard
       if (aiState.hand.length > 0) {
-        // Find smallest discard pile
         let minIdx = 0;
         for (let i = 1; i < 4; i++) {
           if (aiState.discards[i].length < aiState.discards[minIdx].length) minIdx = i;
@@ -357,14 +381,15 @@ export const useGameEngine = () => {
           turn: 'player',
           phase: PHASES.DRAW,
           message: "Your turn! Tap the Draw Pile to start.",
-          stats: { ...state.stats, turnsTaken: state.stats.turnsTaken + 1 }
+          stats: {
+            ...state.stats,
+            turnsTaken: state.stats.turnsTaken + 1
+          }
         }
       });
     };
 
-    // Add slight realistic delay
     timeout = setTimeout(executeAiTurn, 1200);
-
     return () => clearTimeout(timeout);
   }, [state.turn, state.gameOver, getValidMove]);
 
