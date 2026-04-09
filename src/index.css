@@ -18,15 +18,17 @@
 }
 
 html, body, #root {
-  width: 100%;
-  height: 100%;
-  overflow: hidden !important; /* Force kill scrolling */
-  overscroll-behavior: none; /* Kill rubber-banding */
-  touch-action: none; /* Prevent browser handling of gestures */
-  background-color: #0f172a;
   position: fixed;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+  background-color: #0f172a;
   font-family: 'Nunito', sans-serif;
   color: white;
+  margin: 0;
+  padding: 0;
 }
 
 * {
@@ -34,17 +36,19 @@ html, body, #root {
   padding: 0;
   box-sizing: border-box;
   user-select: none;
+  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 .app-viewport {
-  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
   height: 100vh;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
-  position: relative;
-  touch-action: none; /* Critical for drag-and-drop */
+  touch-action: none;
   padding-bottom: env(safe-area-inset-bottom);
 }

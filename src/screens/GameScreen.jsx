@@ -89,155 +89,142 @@ const GameScreen = ({ engine, onGameOver }) => {
   return (
     <div className="app-viewport bg-slate-900 flex flex-col">
       
-      {/* 1. HUD */}
-      <header className="shrink-0 h-[8%] md:h-16 bg-slate-900/90 backdrop-blur-md border-b border-white/10 px-4 flex justify-between items-center z-50">
-        <div className="w-1/4 flex justify-start">
-          <Badge className="bg-slate-800/80 border border-slate-600/50 text-slate-200 text-[10px] md:text-sm">
-            Score: {state.player.score}
-          </Badge>
-        </div>
-        <div className="w-2/4 text-slate-400 font-body font-bold text-[10px] md:text-sm uppercase tracking-[0.2em] text-center truncate px-2">
+      {/* 1. COMPACT HUD */}
+      <header className="shrink-0 h-14 bg-slate-900/90 backdrop-blur-md border-b border-white/10 px-4 flex justify-between items-center z-50">
+        <Badge className="bg-slate-800/80 border border-slate-600/50 text-slate-200 text-xs font-bold px-3 py-1">
+          Score: {state.player.score}
+        </Badge>
+        <div className="text-slate-400 font-body font-bold text-[10px] uppercase tracking-[0.2em] text-center truncate px-2 max-w-[50%]">
           {state.message}
         </div>
-        <div className="w-1/4 flex justify-end gap-3">
-          <button 
-            onClick={() => dispatch({ type: 'INIT_GAME' })} 
-            className="text-slate-500 hover:text-white transition-colors"
-          >
-            <SafeIcon icon={FiRefreshCw} className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </div>
+        <button 
+          onClick={() => dispatch({ type: 'INIT_GAME' })} 
+          className="text-slate-500 hover:text-white transition-colors"
+        >
+          <SafeIcon icon={FiRefreshCw} className="w-5 h-5" />
+        </button>
       </header>
 
       {/* 2. MAIN BOARD AREA */}
-      <main className="flex-1 flex flex-col justify-around py-4 w-full max-w-2xl mx-auto z-10 relative pb-[30vh]">
+      <main className="flex-1 flex flex-col justify-between py-4 px-4 w-full max-w-lg mx-auto z-10 relative pb-[28vh]">
         
-        {/* TOP: AI Zone */}
-        <section className="flex justify-between items-start px-4 w-full">
+        {/* ROW 1: AI ZONE */}
+        <div className="flex justify-between items-start">
           <div className="relative flex flex-col items-center">
-            <CardStack cards={state.ai.stock} size="xs" />
-            <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 bg-slate-800 border border-slate-600 rounded-full px-2 py-0.5 text-[9px] text-slate-400 uppercase">
+            <CardStack cards={state.ai.stock} size="sm" />
+            <Badge className="absolute -bottom-3 bg-slate-800 border border-slate-600 rounded-full px-2.5 py-0.5 text-[9px] text-slate-400 uppercase font-bold shadow-lg">
               AI Stock
             </Badge>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center">
             {state.ai.discards.map((pile, i) => (
               <CardStack key={`ai-d-${i}`} cards={pile} size="xs" />
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* CENTER: Action Zone */}
-        <section className="flex flex-col items-center justify-center w-full px-2 py-4">
-          <div className="flex items-center gap-4 md:gap-8">
-            <motion.div 
-              onClick={canDraw ? handleDraw : undefined} 
-              className={`relative ${canDraw ? 'cursor-pointer ring-4 ring-green-400/80 rounded-xl shadow-[0_0_30px_rgba(74,222,128,0.6)]' : ''}`}
-              whileTap={canDraw ? { scale: 0.95 } : {}}
+        {/* ROW 2: BUILD PILES */}
+        <div className="flex gap-2 justify-center">
+          {state.buildPiles.map((pile, i) => (
+            <div 
+              key={`build-${i}`}
+              ref={el => buildPileRefs.current[i] = el}
+              className="relative"
             >
-              <GameCard hidden size="md" />
-              <span className="absolute -top-3 -right-3 bg-blue-500 text-white text-[10px] md:text-sm font-bold w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-xl z-20">
-                {state.deck.length}
-              </span>
-            </motion.div>
-            
-            <div className="flex gap-2 md:gap-4">
-              {state.buildPiles.map((pile, i) => (
-                <div 
-                  key={`build-${i}`}
-                  ref={el => buildPileRefs.current[i] = el}
-                  className="relative"
-                >
-                  <CardStack 
-                    cards={pile} 
-                    size="md" 
-                  />
-                </div>
-              ))}
+              <CardStack cards={pile} size="md" />
             </div>
-          </div>
-        </section>
+          ))}
+        </div>
 
-        {/* BOTTOM: Player Zone */}
-        <section className="flex justify-between items-end px-4 w-full">
+        {/* ROW 3: DECK & TURN INDICATOR */}
+        <div className="flex justify-between items-center relative h-20">
+          <motion.div 
+            onClick={canDraw ? handleDraw : undefined} 
+            className={`relative shrink-0 ${canDraw ? 'cursor-pointer ring-4 ring-green-400/80 rounded-xl shadow-[0_0_30px_rgba(74,222,128,0.6)]' : ''}`}
+            whileTap={canDraw ? { scale: 0.95 } : {}}
+          >
+            <GameCard hidden size="md" />
+            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-xl z-20">
+              {state.deck.length}
+            </span>
+          </motion.div>
+          
+          <div className="absolute left-1/2 -translate-x-1/2 z-20">
+            <motion.div
+              animate={{ y: state.turn === 'player' ? [0, -5, 0] : 0 }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className={`px-8 py-2.5 text-xs font-game font-black tracking-widest shadow-[0_10px_20px_rgba(0,0,0,0.6)] uppercase rounded-full border-2 ${
+                state.turn === 'player' 
+                  ? "bg-gradient-to-b from-green-400 to-green-600 text-white border-green-300" 
+                  : "bg-gradient-to-b from-slate-700 to-slate-900 text-slate-400 border-slate-600"
+              }`}
+            >
+              {state.turn === 'player' ? 'YOUR TURN' : 'AI IS THINKING'}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* ROW 4: PLAYER ZONE */}
+        <div className="flex justify-between items-end">
           <div className="relative flex flex-col items-center">
             {state.player.stock.length > 0 && (
               <motion.div
                 drag={canDrag}
                 dragSnapToOrigin
                 dragElastic={0.1}
-                dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                 onDragEnd={handleDragEnd(
                   state.player.stock[state.player.stock.length - 1],
                   'stock',
                   0
                 )}
                 whileDrag={{ 
-                  scale: 1.15, 
-                  zIndex: 200,
-                  cursor: 'grabbing'
+                  scale: 1.15,
+                  rotate: 3,
+                  zIndex: 300,
+                  cursor: 'grabbing',
+                  filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.8))'
                 }}
                 className={canDrag ? 'cursor-grab' : ''}
               >
-                <CardStack 
-                  cards={state.player.stock} 
-                  size="sm" 
-                />
+                <CardStack cards={state.player.stock} size="sm" />
               </motion.div>
             )}
             {state.player.stock.length === 0 && (
               <CardStack cards={[]} size="sm" />
             )}
-            <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 bg-slate-800 border border-slate-600 rounded-full px-2 py-0.5 text-[10px] text-white uppercase">
+            <Badge className="absolute -bottom-3 bg-slate-800 border border-slate-600 rounded-full px-2.5 py-0.5 text-[9px] text-white uppercase font-bold shadow-lg">
               Your Stock
             </Badge>
           </div>
-          <div className="flex gap-2">
+          
+          <div className="flex gap-2 justify-center">
             {state.player.discards.map((pile, i) => (
               <div 
                 key={`p-d-${i}`}
                 ref={el => discardPileRefs.current[i] = el}
                 className="relative"
               >
-                <CardStack 
-                  cards={pile} 
-                  size="sm" 
-                />
+                <CardStack cards={pile} size="xs" />
               </div>
             ))}
           </div>
-        </section>
+        </div>
       </main>
 
-      {/* 3. FLOATING TURN INDICATOR */}
-      <div className="absolute bottom-[22vh] left-0 w-full flex justify-center z-[60] pointer-events-none mb-2">
-        <motion.div
-          animate={{ y: state.turn === 'player' ? [0, -5, 0] : 0 }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className={`px-8 py-2 md:px-12 md:py-3 text-xs md:text-sm font-game font-black tracking-widest shadow-[0_10px_20px_rgba(0,0,0,0.6)] uppercase rounded-full border-2 ${
-            state.turn === 'player' 
-              ? "bg-gradient-to-b from-green-400 to-green-600 text-white border-green-300" 
-              : "bg-gradient-to-b from-slate-700 to-slate-900 text-slate-400 border-slate-600"
-          }`}
-        >
-          {state.turn === 'player' ? 'YOUR TURN' : 'AI IS THINKING'}
-        </motion.div>
-      </div>
-
       {/* 4. HAND TRAY (Frosted Glass Footer) */}
-      <footer className="absolute bottom-0 left-0 w-full h-[22vh] min-h-[140px] bg-slate-800/40 backdrop-blur-md border-t border-white/10 flex items-end justify-center pb-6 z-40">
-        <div className="w-full max-w-md md:max-w-4xl flex justify-center px-4 relative h-full">
+      <footer className="absolute bottom-0 left-0 w-full h-[26vh] min-h-[160px] bg-slate-800 border-t border-white/10 flex items-center justify-center pb-6 pointer-events-none">
+        <div className="w-full max-w-md flex justify-center px-4 relative h-full">
           <AnimatePresence mode="popLayout">
             {state.player.hand.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
-                className="text-slate-500 font-body text-xs italic flex items-center justify-center h-full mb-4"
+                className="text-slate-500 font-body text-xs italic flex items-center justify-center h-full"
               >
                 {canDraw ? "Tap deck to draw cards" : "Waiting..."}
               </motion.div>
             ) : (
-              <div className="flex -space-x-6 md:-space-x-10 items-end justify-center pb-4 w-full z-50 pointer-events-auto">
+              <div className="flex -space-x-8 items-end justify-center pb-4 w-full pointer-events-auto">
                 {state.player.hand.map((card, i) => {
                   const offset = i - (state.player.hand.length - 1) / 2;
                   return (
@@ -247,20 +234,20 @@ const GameScreen = ({ engine, onGameOver }) => {
                       drag={canDrag}
                       dragSnapToOrigin
                       dragElastic={0.1}
-                      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                       onDragEnd={handleDragEnd(card, 'hand', i)}
                       initial={{ y: 200, opacity: 0 }}
                       animate={{ 
-                        y: Math.abs(offset) * 10, 
-                        rotate: offset * 6,
+                        y: Math.abs(offset) * 8, 
+                        rotate: offset * 5,
                         opacity: 1
                       }}
                       whileDrag={{ 
-                        scale: 1.2, 
-                        rotate: 0,
-                        y: -60,
-                        zIndex: 200,
-                        cursor: 'grabbing'
+                        scale: 1.25,
+                        rotate: offset * 3,
+                        y: -70,
+                        zIndex: 300,
+                        cursor: 'grabbing',
+                        filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.9))'
                       }}
                       className={`relative origin-bottom ${canDrag ? 'cursor-grab' : ''}`}
                       style={{ zIndex: 50 + i }}
@@ -268,7 +255,7 @@ const GameScreen = ({ engine, onGameOver }) => {
                       <GameCard 
                         card={card} 
                         size="xl"
-                        className="shadow-[0_10px_25px_rgba(0,0,0,0.6)]"
+                        className="shadow-[0_12px_30px_rgba(0,0,0,0.7)]"
                       />
                     </motion.div>
                   );
